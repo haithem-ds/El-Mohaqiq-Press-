@@ -1,0 +1,7 @@
+# Never commit production secrets (copy from *.example.php after clone)
+api/config/database.php
+api/create_admin_user.php
+
+# Logs and runtime uploads
+**/error_log
+api/uploads/pdf_news/*.pdf

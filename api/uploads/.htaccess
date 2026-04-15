@@ -1,0 +1,40 @@
+# Allow direct access to uploaded files
+Options -Indexes +FollowSymLinks
+
+# Set index.php as default for this directory
+DirectoryIndex index.php
+
+# Force proper Content-Type headers for images (critical for social media)
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpg|jpeg)$">
+        Header set Content-Type "image/jpeg"
+        Header set Cache-Control "public, max-age=31536000"
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+
+    <FilesMatch "\.png$">
+        Header set Content-Type "image/png"
+        Header set Cache-Control "public, max-age=31536000"
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+
+    <FilesMatch "\.gif$">
+        Header set Content-Type "image/gif"
+        Header set Cache-Control "public, max-age=31536000"
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+
+    <FilesMatch "\.webp$">
+        Header set Content-Type "image/webp"
+        Header set Cache-Control "public, max-age=31536000"
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
+</IfModule>
+
+# If file doesn't exist, let index.php handle it
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ index.php [L]
+</IfModule>
+
