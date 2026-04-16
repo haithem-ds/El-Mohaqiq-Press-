@@ -2,6 +2,16 @@
 api/config/database.php
 api/create_admin_user.php
 
+# Environment and keys
+.env
+.env.*
+!.env.example
+*.pem
+*.ppk
+id_rsa
+id_rsa.pub
+*.key
+
 # Logs and runtime uploads
 **/error_log
 api/uploads/pdf_news/*.pdf
