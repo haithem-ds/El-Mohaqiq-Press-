@@ -113,7 +113,20 @@ INSERT INTO social_media_links (platform, url, icon, display_order) VALUES
 ('youtube', '#', 'Youtube', 4)
 ON DUPLICATE KEY UPDATE platform = platform;
 
+-- Homepage advertising (images / GIFs / videos; carousel on site when multiple active rows)
+CREATE TABLE IF NOT EXISTS homepage_ads (
+  id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  media_url TEXT NOT NULL,
+  media_type VARCHAR(20) NOT NULL DEFAULT 'image',
+  link_url TEXT NULL,
+  display_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Create indexes
+CREATE INDEX idx_homepage_ads_active ON homepage_ads(is_active, display_order);
 CREATE INDEX idx_breaking_news_active ON breaking_news(is_active, display_order);
 CREATE INDEX idx_social_media_active ON social_media_links(is_active, display_order);
 CREATE INDEX idx_pdf_news_active ON pdf_news(is_active, display_order);

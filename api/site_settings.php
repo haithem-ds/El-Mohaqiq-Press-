@@ -90,6 +90,21 @@ try {
                 
                 echo json_encode($sections);
                 
+            } elseif ($action === 'homepage_ads') {
+                // Public: active homepage ads for the site carousel
+                try {
+                    $stmt = $db->prepare("
+                        SELECT id, media_url, media_type, link_url, display_order
+                        FROM homepage_ads
+                        WHERE is_active = 1
+                        ORDER BY display_order ASC, created_at ASC
+                    ");
+                    $stmt->execute();
+                    echo json_encode($stmt->fetchAll());
+                } catch (Exception $ex) {
+                    echo json_encode([]);
+                }
+                
             } else {
                 // Get all settings (for admin)
                 if (!$isAdmin) {
@@ -101,7 +116,8 @@ try {
                 $result = [
                     'breaking_news' => [],
                     'footer_settings' => [],
-                    'footer_sections' => []
+                    'footer_sections' => [],
+                    'homepage_ads' => []
                 ];
                 
                 // Breaking news
@@ -127,6 +143,14 @@ try {
                     $section['links'] = $linkStmt->fetchAll();
                 }
                 $result['footer_sections'] = $sections;
+                
+                try {
+                    $stmt = $db->prepare("SELECT * FROM homepage_ads ORDER BY display_order ASC, created_at ASC");
+                    $stmt->execute();
+                    $result['homepage_ads'] = $stmt->fetchAll();
+                } catch (Exception $ex) {
+                    $result['homepage_ads'] = [];
+                }
                 
                 echo json_encode($result);
             }
@@ -202,6 +226,35 @@ try {
                 $stmt->execute([$sectionId, $labelAr, $labelFr, $labelEn, $url, $displayOrder]);
                 
                 echo json_encode(['success' => true, 'id' => $db->lastInsertId()]);
+                
+            } elseif ($action === 'homepage_ad') {
+                $mediaUrl = trim($data['media_url'] ?? '');
+                if ($mediaUrl === '') {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'media_url is required']);
+                    exit();
+                }
+                $mediaType = $data['media_type'] ?? 'image';
+                if (!in_array($mediaType, ['image', 'gif', 'video'], true)) {
+                    $mediaType = 'image';
+                }
+                $linkUrl = isset($data['link_url']) ? trim((string)$data['link_url']) : null;
+                if ($linkUrl === '') {
+                    $linkUrl = null;
+                }
+                $displayOrder = intval($data['display_order'] ?? 0);
+                $isActive = isset($data['is_active']) ? ($data['is_active'] ? 1 : 0) : 1;
+                
+                $hex = bin2hex(random_bytes(16));
+                $newId = substr($hex, 0, 8) . '-' . substr($hex, 8, 4) . '-' . substr($hex, 12, 4) . '-' . substr($hex, 16, 4) . '-' . substr($hex, 20, 12);
+                
+                $stmt = $db->prepare("
+                    INSERT INTO homepage_ads (id, media_url, media_type, link_url, display_order, is_active)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ");
+                $stmt->execute([$newId, $mediaUrl, $mediaType, $linkUrl, $displayOrder, $isActive]);
+                
+                echo json_encode(['success' => true, 'id' => $newId]);
             }
             break;
             
@@ -276,6 +329,33 @@ try {
                 $stmt->execute([$labelAr, $labelFr, $labelEn, $url, $isActive, $displayOrder, $id]);
                 
                 echo json_encode(['success' => true]);
+                
+            } elseif ($action === 'homepage_ad' && $id) {
+                $mediaUrl = trim($data['media_url'] ?? '');
+                if ($mediaUrl === '') {
+                    http_response_code(400);
+                    echo json_encode(['error' => 'media_url is required']);
+                    exit();
+                }
+                $mediaType = $data['media_type'] ?? 'image';
+                if (!in_array($mediaType, ['image', 'gif', 'video'], true)) {
+                    $mediaType = 'image';
+                }
+                $linkUrl = isset($data['link_url']) ? trim((string)$data['link_url']) : null;
+                if ($linkUrl === '') {
+                    $linkUrl = null;
+                }
+                $isActive = isset($data['is_active']) ? ($data['is_active'] ? 1 : 0) : 1;
+                $displayOrder = intval($data['display_order'] ?? 0);
+                
+                $stmt = $db->prepare("
+                    UPDATE homepage_ads
+                    SET media_url = ?, media_type = ?, link_url = ?, is_active = ?, display_order = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([$mediaUrl, $mediaType, $linkUrl, $isActive, $displayOrder, $id]);
+                
+                echo json_encode(['success' => true]);
             }
             break;
             
@@ -302,6 +382,10 @@ try {
                 
             } elseif ($action === 'footer_section_link') {
                 $stmt = $db->prepare("DELETE FROM footer_section_links WHERE id = ?");
+                $stmt->execute([$id]);
+                
+            } elseif ($action === 'homepage_ad') {
+                $stmt = $db->prepare("DELETE FROM homepage_ads WHERE id = ?");
                 $stmt->execute([$id]);
             }
             
